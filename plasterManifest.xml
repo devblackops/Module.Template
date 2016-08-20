@@ -17,13 +17,10 @@
         <parameter name='Version' type='text' default='1.0.0' prompt='Enter the version number for the module'/>
         <parameter name='FullName' type='user-fullname' store='text' prompt='Enter your full name'/>
         <parameter name='Email' type='user-email' store='text' prompt='Enter your email address'/>
-        <parameter name='Options' type='multichoice' default='0,1,2' store='text' prompt='Select desired options'>
+        <parameter name='Options' type='multichoice' default='P,G' store='text' prompt='Select desired options'>
             <choice label='&amp;Pester test support'
                     help="Adds Tests directory and a starter Pester Tests file."
                     value="Pester"/>
-            <choice label='P&amp;Sake build script'
-                    help="Adds a PSake build script that generates the module directory for publishing to the PSGallery."
-                    value="PSake"/>
             <choice label='&amp;Git'
                     help="Adds a .gitignore file."
                     value="Git"/>
@@ -31,7 +28,7 @@
                     help="No options specified."
                     value="None"/>
         </parameter>
-        <parameter name='Editor' type='choice' default='2' store='text' prompt='Which editor do you use'>
+        <parameter name='Editor' type='choice' default='C' store='text' prompt='Which editor do you use'>
             <choice label='&amp;ISE'
                     help="Your editor is PowerShell ISE."
                     value="ISE"/>
@@ -42,7 +39,7 @@
                     help="No editor specified."
                     value="None"/>
         </parameter>
-        <parameter name='License' type='choice' default='2' store='text' prompt='Select a license for your module'>
+        <parameter name='License' type='choice' default='A' store='text' prompt='Select a license for your module'>
             <choice label='&amp;Apache'
                     help="Adds an Apache license file."
                     value="Apache"/>
@@ -53,7 +50,7 @@
                     help="No license specified."
                     value="None"/>
         </parameter>
-        <parameter name='AppVeyor' type='choice' default='0' store='text' prompt='Do you use AppVeyor?'>
+        <parameter name='AppVeyor' type='choice' default='Y' store='text' prompt='Do you use AppVeyor?'>
             <choice label='&amp;Yes'
                     help="Enable AppVeyor integration"
                     value='Y'/>
@@ -79,15 +76,22 @@ Scaffold a PowerShell Module with the files required to run Pester tests, build 
               destination='.gitignore'
               condition='$PLASTER_PARAM_Options -contains "Git"'/>
         <file source='build.ps1'
-              destination='build.ps1'
-              condition='$PLASTER_PARAM_Options -contains "PSake"'/>
+              destination='build.ps1'/>
         <file source='appveyor.yml'
               destination='appveyor.yml'
               condition='$PLASTER_PARAM_Options -contains "AppVeyor"'/>
         <file source='module.psdeploy.ps1'
-              destination='module.psdeploy.ps1'/>
-        <file source='psake.ps1'
-              destination='psake.ps1'/>        
+              destination='module.psdeploy.ps1'/>          
+        <file source='Tests/Help.tests.ps1'
+              destination='${PLASTER_PARAM_ModuleName}/Tests/Help.tests.ps1'/>
+        <file source='Tests/Manifest.tests.ps1'
+              destination='${PLASTER_PARAM_ModuleName}/Tests/Manifest.tests.ps1'/>
+        <file source='Tests/Meta.tests.ps1'
+              destination='${PLASTER_PARAM_ModuleName}/Tests/Meta.tests.ps1'/>
+        <file source='Tests/MetaFixers.psm1'
+              destination='${PLASTER_PARAM_ModuleName}/Tests/MetaFixers.psm1'/>
+        <templateFile source='psake.ps1'
+              destination='psake.ps1'/>
         <templateFile source='CHANGELOG.md'
                       destination='CHANGELOG.md'/>
         <templateFile source='README.md'
@@ -169,12 +173,6 @@ Scaffold a PowerShell Module with the files required to run Pester tests, build 
         <message nonewline='true'>`n`nYour new PowerShell module project $PLASTER_PARAM_ModuleName </message>
         <message nonewline='true' condition="$PLASTER_PARAM_Options -contains 'Git'">with Git version control </message>
         <message>has been created.</message>
-
-        <message condition="$PLASTER_PARAM_Options -contains 'PSake'">
-You can build your project by executing the 'build' task by pressing Ctrl+P, then type 'task build'.
-You can publish your project to the PSGallery by pressing Ctrl+P, then type 'task publish'.
-
-        </message>
 
         <message condition="$PLASTER_PARAM_Options -contains 'Pester'">
 A Pester test has been created to validate the module's manifest file.  Add additional test to the Tests directory.
