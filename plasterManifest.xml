@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<plasterManifest schemaVersion="0.3" xmlns="http://www.microsoft.com/schemas/PowerShell/Plaster/v1">
+    <metadata>
+        <!-- For the default store file, we need a unique identifier to ensure one template's default value store
+             doesn't get used with any other template.  -->
+        <id>6cbb7462-9cc0-43d7-846d-a22899c95aef</id>
+        <!-- For display by UI's in a menu list -->
+        <title>New Module Project</title>
+        <!-- For display by UI's in hover help -->
+        <description>Plaster template for creating the files for a PowerShell module.</description>
+        <version>0.1.0</version>
+        <tags>Module, ModuleManifest, Build</tags>
+    </metadata>
+    <parameters>
+        <parameter name='ModuleName' type='text' prompt='Enter the name of the module'/>
+        <parameter name='ModuleDesc' type='text' prompt='Enter a description of the module (required for publishing to the PowerShell Gallery)'/>
+        <parameter name='Version' type='text' default='1.0.0' prompt='Enter the version number for the module'/>
+        <parameter name='FullName' type='user-fullname' store='text' prompt='Enter your full name'/>
+        <parameter name='Email' type='user-email' store='text' prompt='Enter your email address'/>
+        <parameter name='Options' type='multichoice' default='0,1,2' store='text' prompt='Select desired options'>
+            <choice label='&amp;Pester test support'
+                    help="Adds Tests directory and a starter Pester Tests file."
+                    value="Pester"/>
+            <choice label='P&amp;Sake build script'
+                    help="Adds a PSake build script that generates the module directory for publishing to the PSGallery."
+                    value="PSake"/>
+            <choice label='&amp;Git'
+                    help="Adds a .gitignore file."
+                    value="Git"/>
+            <choice label='&amp;None'
+                    help="No options specified."
+                    value="None"/>
+        </parameter>
+        <parameter name='Editor' type='choice' default='2' store='text' prompt='Which editor do you use'>
+            <choice label='&amp;ISE'
+                    help="Your editor is PowerShell ISE."
+                    value="ISE"/>
+            <choice label='Visual Studio &amp;Code'
+                    help="Your editor is Visual Studio Code."
+                    value="VSCode"/>
+            <choice label='&amp;None'
+                    help="No editor specified."
+                    value="None"/>
+        </parameter>
+        <parameter name='License' type='choice' default='2' store='text' prompt='Select a license for your module'>
+            <choice label='&amp;Apache'
+                    help="Adds an Apache license file."
+                    value="Apache"/>
+            <choice label='&amp;MIT'
+                    help="Adds an MIT license file."
+                    value="MIT"/>
+            <choice label='&amp;None'
+                    help="No license specified."
+                    value="None"/>
+        </parameter>
+        <parameter name='AppVeyor' type='choice' default='0' store='text' prompt='Do you use AppVeyor?'>
+            <choice label='&amp;Yes'
+                    help="Enable AppVeyor integration"
+                    value='Y'/>
+            <choice label='&amp;No'
+                    help="Disable AppVeyor integration"
+                    value='N'/>
+        </parameter>
+    </parameters>
+    <content>
+        <message>
+Scaffold a PowerShell Module with the files required to run Pester tests, build with PSake and publish to the PSGallery.
+
+        </message>
+        <newModuleManifest destination='${PLASTER_PARAM_ModuleName}/${PLASTER_PARAM_ModuleName}.psd1'
+                           moduleVersion='$PLASTER_PARAM_Version'
+                           rootModule='${PLASTER_PARAM_ModuleName}.psm1'
+                           author='$PLASTER_PARAM_FullName'
+                           description='$PLASTER_PARAM_ModuleDesc'
+                           encoding='UTF8-NoBOM'/>
+        <file source='module.psm1'
+              destination='${PLASTER_PARAM_ModuleName}/${PLASTER_PARAM_ModuleName}.psm1'/>
+        <file source='_gitignore'
+              destination='.gitignore'
+              condition='$PLASTER_PARAM_Options -contains "Git"'/>
+        <file source='build.ps1'
+              destination='build.ps1'
+              condition='$PLASTER_PARAM_Options -contains "PSake"'/>
+        <file source='appveyor.yml'
+              destination='appveyor.yml'
+              condition='$PLASTER_PARAM_Options -contains "AppVeyor"'/>
+        <file source='module.psdeploy.ps1'
+              destination='module.psdeploy.ps1'/>
+        <file source='psake.ps1'
+              destination='psake.ps1'/>        
+        <templateFile source='CHANGELOG.md'
+                      destination='CHANGELOG.md'/>
+        <templateFile source='README.md'
+                      destination='README.md'/>
+        <!-- Recursively copy all *files* into the corresponding directory structure under dest dir RecurseFile -->
+        <!--<file source='RecurseFile\**'
+              destination='Recurse'/>-->
+        <templateFile source='ApacheLicense.txt'
+                      destination='LICENSE.txt'
+                      condition="$PLASTER_PARAM_License -eq 'Apache'"
+                      encoding="UTF8-NoBOM"/>
+        <templateFile source='MITLicense.txt'
+                      destination='LICENSE.txt'
+                      condition="$PLASTER_PARAM_License -eq 'MIT'"/>
+        <templateFile source='about_Module.help.txt'
+                      destination='${PLASTER_PARAM_ModuleName}/en-US/about_${PLASTER_PARAM_ModuleName}.help.txt'/>
+        <!--<templateFile source='Tests\Module.T.ps1'
+                      destination='Tests\${PLASTER_PARAM_ModuleName}.Tests.ps1'
+                      condition="$PLASTER_PARAM_Options -contains 'Pester'"/>-->
+        <!--<templateFile source='RecurseTemplateFile\**'
+                      destination='Recurse'
+                      encoding='Ascii'/>-->
+        <file source='tasks.json'
+              destination='.vscode\tasks.json'
+              condition="$PLASTER_PARAM_Editor -eq 'VSCode'"/>
+        <modify path='.vscode\tasks.json' encoding='UTF8'
+                condition="$PLASTER_PARAM_Editor -eq 'VSCode'">
+            <replace condition="$PLASTER_FileContent -notmatch '// Author:'">
+                <original>(?s)^(.*)</original>
+                <substitute expand='true'>``$1`r`n// Author: $PLASTER_PARAM_FullName</substitute>
+            </replace>
+            <replace condition="$PLASTER_PARAM_Options -contains 'Pester' -and $PLASTER_FileContent -notmatch 'taskName&quot;:\s*&quot;Test&quot;'">
+                <original><![CDATA[(?si)(?<="tasks":\s*\[)(\s*)(?=\{)]]></original>
+                <substitute><![CDATA[$1{
+            "taskName": "Test",
+            "suppressTaskName": true,
+            "isTestCommand": true,
+            "showOutput": "always",
+            "args": [
+                "Write-Host 'Invoking Pester...'; Invoke-Pester -PesterOption @{IncludeVSCodeMarker=$true};",
+                "Invoke-Command { Write-Host 'Completed Test task in task runner.' }"
+            ],
+            "problemMatcher": [
+                {
+                    "owner": "powershell",
+                    "fileLocation": ["absolute"],
+                    "severity": "error",
+                    "pattern": [
+                        {
+                            "regexp": "^\\s*(\\[-\\]\\s*.*?)(\\d+)ms\\s*$",
+                            "message": 1
+                        },
+                        {
+                            "regexp": "^\\s+at\\s+[^,]+,\\s*(.*?):\\s+line\\s+(\\d+)$",
+                            "file": 1,
+                            "line": 2
+                        }
+                    ]
+                }
+            ]
+        },$1]]></substitute>
+            </replace>
+
+            <replace condition="$PLASTER_PARAM_Options -contains 'PSake' -and $PLASTER_FileContent -notmatch 'taskName&quot;:\s*&quot;Build&quot;'">
+                <original><![CDATA[(?si)(?<="tasks":\s*\[)(\s*)(?=\{)]]></original>
+                <substitute><![CDATA[$1{
+            "taskName": "Build",
+            "suppressTaskName": true,
+            "isBuildCommand": true,
+            "showOutput": "always",
+            "args": [
+                "Write-Host 'Invoking PSake...'; Invoke-PSake build.ps1 -taskList Build;",
+                "Invoke-Command { Write-Host 'Completed Build task in task runner.' }"
+            ]
+        },$1]]></substitute>
+            </replace>
+        </modify>
+
+        <message nonewline='true'>`n`nYour new PowerShell module project $PLASTER_PARAM_ModuleName </message>
+        <message nonewline='true' condition="$PLASTER_PARAM_Options -contains 'Git'">with Git version control </message>
+        <message>has been created.</message>
+
+        <message condition="$PLASTER_PARAM_Options -contains 'PSake'">
+You can build your project by executing the 'build' task by pressing Ctrl+P, then type 'task build'.
+You can publish your project to the PSGallery by pressing Ctrl+P, then type 'task publish'.
+
+        </message>
+
+        <message condition="$PLASTER_PARAM_Options -contains 'Pester'">
+A Pester test has been created to validate the module's manifest file.  Add additional test to the Tests directory.
+You can run the Pester tests in your project by executing the 'test' task by pressing Ctrl+P, then type 'task test'.
+
+        </message>
+    </content>
+</plasterManifest>
